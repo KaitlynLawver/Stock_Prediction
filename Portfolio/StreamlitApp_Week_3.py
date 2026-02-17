@@ -141,8 +141,12 @@ with st.form("pred_form"):
 if submitted:
 
     data_row = [user_inputs[k] for k in MODEL_INFO["keys"]]
+    print("data_row")
+    print(data_row)
     # Prepare data
     base_df = df_features
+    print("base_df")
+    print(base_df)
     input_df = pd.concat([base_df, pd.DataFrame([data_row], columns=base_df.columns)])
     
     res, status = call_model_api(input_df)
@@ -151,6 +155,7 @@ if submitted:
         display_explanation(input_df,session, aws_bucket)
     else:
         st.error(res)
+
 
 
 
