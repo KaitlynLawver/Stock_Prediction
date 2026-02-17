@@ -59,7 +59,7 @@ MODEL_INFO = {
         "endpoint": aws_endpoint,
         "explainer": 'explainer.shap',
         "pipeline": 'finalized_model.tar.gz',
-        "keys": ["GOOGL", "IBM", "DEXJPUS", "DEXUSUK", "SP500", "DJIA", "VIXCLS"],
+        "keys": ["NFLX", "DIS", "META", "DEXJPUS", "DEXUSUK", "^GSPC", "^IXIC", "^VIX"],
         "inputs": [{"name": k, "type": "number", "min": -1.0, "max": 1.0, "default": 0.0, "step": 0.01} for k in ["GOOGL", "IBM", "DEXJPUS", "DEXUSUK", "SP500", "DJIA", "VIXCLS"]]
 }
 
