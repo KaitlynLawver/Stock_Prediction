@@ -30,19 +30,32 @@ def extract_features():
     idx_data = yf.download(idx_tickers, start=START_DATE, end=END_DATE, auto_adjust=False)
 
     Y = np.log(stk_data.loc[:, ('Adj Close', 'NFLX')]).diff(return_period).shift(-return_period)
-    Y.name = Y.name[-1]+'_Future'
+    Y.name = 'NFLX_future_return'
     
     X1 = np.log(stk_data.loc[:, ('Adj Close', ('DIS', 'META'))]).diff(return_period)
     X1.columns = X1.columns.droplevel()
     X2 = np.log(ccy_data).diff(return_period)
-    X3 = np.log(idx_data).diff(return_period)
-
+    # Use only Adjusted Close prices from index data
+    idx_adj_close = idx_data['Adj Close']
+    
+    # Compute log returns
+    X3 = np.log(idx_adj_close).diff(return_period)
+    
     X = pd.concat([X1, X2, X3], axis=1)
     
-    dataset = pd.concat([Y, X], axis=1).dropna().iloc[::return_period, :]
-    Y = dataset.loc[:, Y.name]
-    X = dataset.loc[:, X.columns]
+    dataset = pd.concat([Y, X], axis=1)
+    
+    # Align everything to stock trading dates
+    dataset = dataset.loc[stk_data.index]
+    
+    # Forward fill macro / FX data
+    dataset = dataset.ffill()
+    
+    # Drop remaining missing values
+    dataset = dataset.dropna()
+    
     dataset.index.name = 'Date'
+    
     #dataset.to_csv(r"./test_data.csv")
     features = dataset.sort_index()
     features = features.reset_index(drop=True)
@@ -66,6 +79,7 @@ def get_bitcoin_historical_prices(days = 60):
     df['Date'] = pd.to_datetime(df['Timestamp'], unit='ms').dt.normalize()
     df = df[['Date', 'Close Price (USD)']].set_index('Date')
     return df
+
 
 
 
