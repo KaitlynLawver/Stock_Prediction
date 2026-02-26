@@ -30,10 +30,10 @@ def extract_features():
     #idx_data = yf.download(idx_tickers, start=START_DATE, end=END_DATE, auto_adjust=False)
 
     #Y = np.log(stk_data.loc[:, ('Adj Close', 'NFLX')]).diff(return_period).shift(-return_period)
-    Y = stk_data.loc[:, ('Adj Close', 'APPL')])
+    Y = stk_data.loc[:, ('Adj Close', 'APPL')]
     Y.name = 'APPL'
 
-    X = stk_data.loc[:, ('Adj Close', 'MPWR')])
+    X = stk_data.loc[:, ('Adj Close', 'MPWR')]
     X.name = 'MPWR'
     
     #X1 = np.log(stk_data.loc[:, ('Adj Close', ('DIS', 'META'))]).diff(return_period)
@@ -83,6 +83,7 @@ def get_bitcoin_historical_prices(days = 60):
     df['Date'] = pd.to_datetime(df['Timestamp'], unit='ms').dt.normalize()
     df = df[['Date', 'Close Price (USD)']].set_index('Date')
     return df
+
 
 
 
