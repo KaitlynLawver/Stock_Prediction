@@ -40,7 +40,7 @@ def extract_features():
     #X1.columns = X1.columns.droplevel()
     #X2 = np.log(ccy_data).diff(return_period)
     # Use only Adjusted Close prices from index data
-    idx_adj_close = idx_data['Adj Close']
+    #idx_adj_close = idx_data['Adj Close']
     
     # Compute log returns
     #X3 = np.log(idx_adj_close).diff(return_period)
@@ -83,6 +83,7 @@ def get_bitcoin_historical_prices(days = 60):
     df['Date'] = pd.to_datetime(df['Timestamp'], unit='ms').dt.normalize()
     df = df[['Date', 'Close Price (USD)']].set_index('Date')
     return df
+
 
 
 
