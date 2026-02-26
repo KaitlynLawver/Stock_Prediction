@@ -57,10 +57,10 @@ df_features = extract_features()
 
 MODEL_INFO = {
         "endpoint": aws_endpoint,
-        "explainer": 'explainer.shap',
+        "explainer": 'explainer_pair.shap',
         "pipeline": 'finalized_model.tar.gz',
         "keys": ["APPL","MPWR"],
-        "inputs": [{"name": k, "type": "number", "min": -1.0, "max": 1.0, "default": 0.0, "step": 0.01} for k in ["APPL", "MPWR"]]
+        "inputs": [{"name": k, "type": "number", "min": 0.0, "max": 1.0, "default": 0.0, "step": 10.0} for k in ["APPL", "MPWR"]]
 }
 
 def load_pipeline(_session, bucket, key):
@@ -151,6 +151,7 @@ if submitted:
         display_explanation(input_df,session, aws_bucket)
     else:
         st.error(res)
+
 
 
 
