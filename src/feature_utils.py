@@ -97,7 +97,7 @@ def convert_input_pca_regression(request_body, request_content_type):
 
     target = 'MSFT'
 
-    option = 1
+    option = 2
 
     if option == 2:
 
