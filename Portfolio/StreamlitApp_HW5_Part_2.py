@@ -103,7 +103,8 @@ def call_model_api(input_df):
         #pred_val = pd.DataFrame(raw_pred).values[-1][0]
         #pred_val = json.loads(raw_pred)
         #mapping = {-1: "SELL", 0: "HOLD", 1: "BUY"}
-        return mapping.get(raw_pred), 200
+        #return mapping.get(raw_pred), 200
+        return raw_pred, 200
     except Exception as e:
         return f"Error: {str(e)}", 500
 
