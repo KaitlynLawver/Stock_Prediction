@@ -59,12 +59,21 @@ sm_session = sagemaker.Session(boto_session=session)
 # Data & Model Configuration
 df_features = extract_features()
 
+FEATURE_NAMES = [
+    "EXPD", "TPL", "PGR", "CPRT", "PTC",
+    "EXPD_lag1", "TPL_lag1", "PGR_lag1", "CPRT_lag1", "PTC_lag1",
+    "EXPD_lag2", "TPL_lag2", "PGR_lag2", "CPRT_lag2", "PTC_lag2"
+]
+
 MODEL_INFO = {
-        "endpoint": aws_endpoint,
-        "explainer": 'explainer_sentiment.shap',
-        "pipeline": 'finalized_sentiment_model.tar.gz',
-        "keys": ['ADBE','MSFT','JPM','sentiment_textblob'],
-        "inputs": [{"name": k, "type": "number", "min": -1.0, "max": 1.0, "default": 0.0, "step": 0.01} for k in ['ADBE','MSFT','JPM','sentiment_textblob']]
+    "endpoint": aws_endpoint,
+    "explainer": "explainer_hw4.shap",
+    "pipeline": "best_hw4_pairs_model.tar.gz",
+    "keys": FEATURE_NAMES,
+    "inputs": [
+        {"name": k, "type": "number", "min": -1.0, "max": 1.0, "default": 0.0, "step": 0.0001}
+        for k in FEATURE_NAMES
+    ]
 }
 
 def load_pipeline(_session, bucket, key):
@@ -97,24 +106,17 @@ def load_shap_explainer(_session, bucket, key, local_path):
 
 # Prediction Logic
 def call_model_api(input_df):
-
     predictor = Predictor(
         endpoint_name=MODEL_INFO["endpoint"],
         sagemaker_session=sm_session,
-        serializer=NumpySerializer(),
-        deserializer=NumpyDeserializer() 
+        serializer=CSVSerializer(),
+        deserializer=JSONDeserializer()
     )
 
     try:
-        # For regression
-        # raw_pred = predictor.predict(input_df)
-        # pred_val = pd.DataFrame(raw_pred).values[-1][0]
-        # return round(float(pred_val), 4), 200
-        # For classification
-        raw_pred = predictor.predict(input_df)
-        pred_val = pd.DataFrame(raw_pred).values[-1][0]
-        mapping = {-1: "SELL", 0: "HOLD", 1: "BUY"}
-        return mapping.get(pred_val), 200
+        raw_pred = predictor.predict(input_df.values)
+        pred_val = raw_pred[0] if isinstance(raw_pred, list) else raw_pred
+        return round(float(pred_val), 6), 200
     except Exception as e:
         return f"Error: {str(e)}", 500
 
@@ -123,7 +125,7 @@ def display_explanation(input_df, session, aws_bucket):
     explainer_name = MODEL_INFO["explainer"]
     explainer = load_shap_explainer(session, aws_bucket, posixpath.join('explainer', explainer_name),os.path.join(tempfile.gettempdir(), explainer_name))
     
-    best_pipeline = load_pipeline(session, aws_bucket, 'sklearn-pipeline-deployment')
+    best_pipeline = load_pipeline(session, aws_bucket, 'hw4-pairs-deployment')
     preprocessing_pipeline = Pipeline(steps=best_pipeline.steps[:-2])
     input_df_transformed = preprocessing_pipeline.transform(input_df)
     feature_names = best_pipeline[:-2].get_feature_names_out()
