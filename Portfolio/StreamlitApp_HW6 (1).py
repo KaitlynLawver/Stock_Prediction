@@ -60,11 +60,13 @@ sm_session = sagemaker.Session(boto_session=session)
 df_features = extract_features()
 
 MODEL_INFO = {
-        "endpoint": aws_endpoint,
-        "explainer": 'explainer_sentiment.shap',
-        "pipeline": 'finalized_sentiment_model.tar.gz',
-        "keys": ['ADBE','MSFT','JPM','sentiment_textblob'],
-        "inputs": [{"name": k, "type": "number", "min": -1.0, "max": 1.0, "default": 0.0, "step": 0.01} for k in ['ADBE','MSFT','JPM','sentiment_textblob']]
+         "target": "NFLX",
+    "endpoint": aws_endpoint,
+    "explainer": 'explainer_sentiment.shap',
+    "pipeline": 'finalized_sentiment_model.tar.gz',
+    "keys": ['ADBE', 'GOOG', 'AMZN', 'sentiment_textblob'],  # ← match your trained model
+    "inputs": [{"name": k, "type": "number", "min": -1.0, "max": 1.0, "default": 0.0, "step": 0.01} 
+               for k in ['ADBE', 'GOOG', 'AMZN', 'sentiment_textblob']]
 }
 
 def load_pipeline(_session, bucket, key):
