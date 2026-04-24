@@ -121,25 +121,56 @@ def call_model_api(input_df):
 # Local Explainability
 def display_explanation(input_df, session, aws_bucket):
     explainer_name = MODEL_INFO["explainer"]
-    explainer = load_shap_explainer(session, aws_bucket, posixpath.join('explainer', explainer_name),os.path.join(tempfile.gettempdir(), explainer_name))
+    explainer = load_shap_explainer(
+        session, aws_bucket, 
+        posixpath.join('explainer', explainer_name),
+        os.path.join(tempfile.gettempdir(), explainer_name)
+    )
     
     best_pipeline = load_pipeline(session, aws_bucket, 'sklearn-pipeline-deployment')
-    preprocessing_pipeline = Pipeline(steps=best_pipeline.steps[:-2])
-    input_df_transformed = preprocessing_pipeline.transform(input_df)
-    feature_names = best_pipeline[:-2].get_feature_names_out()
+    
+    # Fix: only keep steps up to (not including) sampler and model
+    # Classification pipeline has: imputer -> scaler -> sampler -> model
+    # We only want imputer -> scaler for transformation
+    preprocess_steps = [(name, step) for name, step in best_pipeline.steps 
+                        if name not in ('sampler', 'model')]
+    preprocessing_pipeline = Pipeline(steps=preprocess_steps)
+    
+    # Fix: make sure column names exactly match what pipeline was trained on
+    input_df = input_df[MODEL_INFO["keys"]]  # enforce correct column order
+    input_df.columns = MODEL_INFO["keys"]    # enforce correct column names
+    
+    try:
+        input_df_transformed = preprocessing_pipeline.transform(input_df)
+    except Exception as e:
+        st.error(f"Preprocessing failed: {e}")
+        return
+
+    # Get feature names safely
+    try:
+        feature_names = preprocessing_pipeline[-1].get_feature_names_out()
+    except Exception:
+        feature_names = MODEL_INFO["keys"]
+
     input_df_transformed = pd.DataFrame(input_df_transformed, columns=feature_names)
     shap_values = explainer(input_df_transformed)
     
     st.subheader("🔍 Decision Transparency (SHAP)")
-    fig, ax = plt.subplots(figsize=(10, 4))
-    #shap.plots.waterfall(shap_values[0], max_display=10)
-    shap.plots.waterfall(shap_values[0, :, 0])
-    st.pyplot(fig)
-    # top feature 
-    # top_feature = pd.Series(shap_values[0].values, index=shap_values[0].feature_names).abs().idxmax()
-    top_feature = pd.Series(shap_values[0, :, 0].values, index=shap_values[0, :, 0].feature_names).abs().idxmax()
-    st.info(f"**Business Insight:** The most influential factor in this decision was **{top_feature}**.")
+    
+    # Fix: use show=False so SHAP draws to current figure, then grab it
+    shap.plots.waterfall(shap_values[0, :, 0], show=False)
+    st.pyplot(plt.gcf())
+    plt.clf()
 
+    # Top feature
+    try:
+        top_feature = pd.Series(
+            shap_values[0, :, 0].values, 
+            index=shap_values[0, :, 0].feature_names
+        ).abs().idxmax()
+        st.info(f"**Business Insight:** The most influential factor in this decision was **{top_feature}**.")
+    except Exception:
+        pass
 
 # Streamlit UI
 st.set_page_config(page_title="ML Deployment", layout="wide")
