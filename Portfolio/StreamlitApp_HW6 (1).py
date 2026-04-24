@@ -131,16 +131,11 @@ def display_explanation(input_df, session, aws_bucket):
     
     best_pipeline = load_pipeline(session, aws_bucket, 'sklearn-pipeline-deployment')
     
-    # Fix: only keep steps up to (not including) sampler and model
-    # Classification pipeline has: imputer -> scaler -> sampler -> model
-    # We only want imputer -> scaler for transformation
     preprocess_steps = [(name, step) for name, step in best_pipeline.steps 
                         if name not in ('sampler', 'model')]
     preprocessing_pipeline = Pipeline(steps=preprocess_steps)
     
-    # Fix: make sure column names exactly match what pipeline was trained on
-    input_df = input_df[MODEL_INFO["keys"]]  # enforce correct column order
-    input_df.columns = MODEL_INFO["keys"]    # enforce correct column names
+    input_df = input_df[MODEL_INFO["keys"]]
     
     try:
         input_df_transformed = preprocessing_pipeline.transform(input_df)
@@ -148,7 +143,6 @@ def display_explanation(input_df, session, aws_bucket):
         st.error(f"Preprocessing failed: {e}")
         return
 
-    # Get feature names safely
     try:
         feature_names = preprocessing_pipeline[-1].get_feature_names_out()
     except Exception:
@@ -159,20 +153,38 @@ def display_explanation(input_df, session, aws_bucket):
     
     st.subheader("🔍 Decision Transparency (SHAP)")
     
-    # Fix: use show=False so SHAP draws to current figure, then grab it
-    shap.plots.waterfall(shap_values[0, :, 0], show=False)
-    st.pyplot(plt.gcf())
-    plt.clf()
-
-    # Top feature
+    # Fix: handle both 2D (regression) and 3D (classification) SHAP outputs
     try:
+        if len(shap_values.shape) == 3:
+            # Classification - pick the predicted class index
+            sv = shap_values[0, :, 0]
+        else:
+            # Regression - straightforward
+            sv = shap_values[0]
+        
+        shap.plots.waterfall(sv, show=False)
+        st.pyplot(plt.gcf())
+        plt.clf()
+
         top_feature = pd.Series(
-            shap_values[0, :, 0].values, 
-            index=shap_values[0, :, 0].feature_names
+            sv.values, 
+            index=sv.feature_names
         ).abs().idxmax()
         st.info(f"**Business Insight:** The most influential factor in this decision was **{top_feature}**.")
-    except Exception:
-        pass
+
+    except Exception as e:
+        st.error(f"SHAP plot failed: {e}")
+        # Fallback: show bar chart of raw SHAP values instead
+        try:
+            vals = shap_values.values[0] if len(shap_values.shape) == 2 else shap_values.values[0, :, 0]
+            shap_series = pd.Series(np.abs(vals), index=feature_names)
+            fig, ax = plt.subplots()
+            shap_series.sort_values().plot(kind='barh', ax=ax, color='tomato')
+            ax.set_title('Feature Importance (SHAP)')
+            st.pyplot(fig)
+            plt.clf()
+        except Exception as e2:
+            st.error(f"Fallback plot also failed: {e2}")
 
 # Streamlit UI
 st.set_page_config(page_title="ML Deployment", layout="wide")
