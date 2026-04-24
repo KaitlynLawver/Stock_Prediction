@@ -60,7 +60,7 @@ sm_session = sagemaker.Session(boto_session=session)
 df_features = extract_features()
 
 MODEL_INFO = {
-         "target": "NFLX",
+    "target": "NFLX",
     "endpoint": aws_endpoint,
     "explainer": 'explainer_sentiment.shap',
     "pipeline": 'finalized_sentiment_model.tar.gz',
@@ -115,8 +115,7 @@ def call_model_api(input_df):
         # For classification
         raw_pred = predictor.predict(input_df)
         pred_val = pd.DataFrame(raw_pred).values[-1][0]
-        mapping = {0: "SELL", 1: "HOLD", 2: "BUY"}
-        return mapping.get(int(pred_val), "UNKNOWN"), 200
+        return round(float(pred_val), 6), 200
     except Exception as e:
         return f"Error: {str(e)}", 500
 
@@ -214,7 +213,7 @@ if submitted:
     
     res, status = call_model_api(input_df)
     if status == 200:
-        st.metric("Prediction Result", res)
+        st.metric("Prediction Return", res)
         display_explanation(input_df,session, aws_bucket)
     else:
         st.error(res)
