@@ -109,15 +109,19 @@ def load_shap_explainer(_session, bucket, key, local_path):
 def call_model_api(input_df):
 
     predictor = Predictor(
-        endpoint_name=MODEL_INFO["endpoint"],
-        sagemaker_session=sm_session,
-        serializer=JSONSerializer(),
-        deserializer=NumpyDeserializer()
+    endpoint_name=MODEL_INFO["endpoint"],
+    sagemaker_session=sm_session,
+    serializer=CSVSerializer(),
+    deserializer=JSONDeserializer()
     )
 
     try:
-        raw_pred = predictor.predict(input_df)
-        pred_val = pd.DataFrame(raw_pred).values[-1][0]
+       if isinstance(input_df, dict):
+            input_df = pd.DataFrame([input_df])
+
+        payload = input_df.values.tolist()
+        raw_pred = predictor.predict(payload)
+        pred_val = int(np.array(raw_pred).flatten()[-1])
         #mapping = {0: "SELL", 1: "HOLD", 2: "BUY"}
         mapping = {0: "Legitimate", 1: "Fraud"}
         return mapping.get(pred_val), 200
