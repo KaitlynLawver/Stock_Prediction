@@ -39,7 +39,7 @@ if project_root not in sys.path:
 #from src.feature_utils import extract_features
 #from src.Custom_Classes import DropHighMissingCols, TransactionFeatureEngineer, DropHighCorrelation
 
-file_path = os.path.join(project_root, 'Portfolio/X_train.csv')
+file_path = os.path.join(current_dir, 'X_train.csv')
 
 dataset = pd.read_csv(file_path)
 dataset = dataset.drop(['Unnamed: 0'],axis=1)
