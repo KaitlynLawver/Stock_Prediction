@@ -115,8 +115,8 @@ def call_model_api(input_df):
     deserializer=JSONDeserializer()
     )
 
-    try:
-       if isinstance(input_df, dict):
+     try:
+        if isinstance(input_df, dict):
             input_df = pd.DataFrame([input_df])
 
         payload = input_df.values.tolist()
