@@ -107,15 +107,14 @@ def load_shap_explainer(_session, bucket, key, local_path):
 
 # Prediction Logic
 def call_model_api(input_df):
-
     predictor = Predictor(
-    endpoint_name=MODEL_INFO["endpoint"],
-    sagemaker_session=sm_session,
-    serializer=CSVSerializer(),
-    deserializer=JSONDeserializer()
+        endpoint_name=MODEL_INFO["endpoint"],
+        sagemaker_session=sm_session,
+        serializer=CSVSerializer(),
+        deserializer=JSONDeserializer()
     )
 
-     try:
+    try:                                          
         if isinstance(input_df, dict):
             input_df = pd.DataFrame([input_df])
 
@@ -125,7 +124,7 @@ def call_model_api(input_df):
         #mapping = {0: "SELL", 1: "HOLD", 2: "BUY"}
         mapping = {0: "Legitimate", 1: "Fraud"}
         return mapping.get(pred_val), 200
-    except Exception as e:
+    except Exception as e:                        
         return f"Error: {str(e)}", 500
 
 # Local Explainability
